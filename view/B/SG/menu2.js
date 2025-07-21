@@ -2,33 +2,51 @@ var countryPrefix = localStorage.getItem("urlPrefix");
 
 document.write(`
 <script>
-    document.addEventListener("DOMContentLoaded", function(){
+    document.addEventListener("DOMContentLoaded", function() {
         var memberEmail = sessionStorage.getItem("memberEmail");
-        if(memberEmail == null || memberEmail == "") {
-            document.getElementById("menuLoggedOut").setAttribute("style", "display:block");
-            document.getElementById("menuLoggedIn").setAttribute("style", "display:none");
-        }
-        else {
-            document.getElementById("menuLoggedOut").setAttribute("style", "display:none");
-            document.getElementById("menuLoggedIn").setAttribute("style", "display:block");
+
+        if (memberEmail == null || memberEmail == "") {
+            document.getElementById("menuLoggedOut").style.display = "block";
+            document.getElementById("menuLoggedIn").style.display = "none";
+            document.getElementById("favoritesLoginPrompt").style.display = "block";
+            
+            // Set retail products link for logged out users
+            document.getElementById("retailProductLink").href = "/B/${countryPrefix}/retailProductsCategory.html?cat=" + encodeURIComponent("All Retail Products");
+        } else {
+            document.getElementById("menuLoggedOut").style.display = "none";
+            document.getElementById("menuLoggedIn").style.display = "block";
+            document.getElementById("favoritesLoginPrompt").style.display = "none";
+
             var welcomeText = sessionStorage.getItem("memberName");
-            if(welcomeText == "null") {
+            if (welcomeText == "null") {
                 welcomeText = "";
             }
             document.getElementById("memberName").innerHTML = "Welcome " + welcomeText + "!";
+
+            document.getElementById("tableDeskLink").href = "/B/${countryPrefix}/furnitureCategory.html?cat=" + encodeURIComponent("Tables & Desks");
+            document.getElementById("bedMattressLink").href = "/B/${countryPrefix}/furnitureCategory.html?cat=" + encodeURIComponent("Beds & Mattresses");
+            document.getElementById("sofaChairLink").href = "/B/${countryPrefix}/furnitureCategory.html?cat=" + encodeURIComponent("Sofas & Chair");
+            document.getElementById("cabinetStorageLink").href = "/B/${countryPrefix}/furnitureCategory.html?cat=" + encodeURIComponent("Cabinets & Storage");
+            document.getElementById("retailProductLink").href = "/B/${countryPrefix}/retailProductsCategory.html?cat=" + encodeURIComponent("All Retail Products");
+            document.getElementById("favouritesLink").href = "/B/${countryPrefix}/favourites.html";
         }
-        document.getElementById("tableDeskLink").setAttribute("href", "/B/" + countryPrefix + "/furnitureCategory.html?cat=" + encodeURIComponent("Tables & Desks"));
-        document.getElementById("bedMattressLink").setAttribute("href", "/B/" + countryPrefix + "/furnitureCategory.html?cat=" + encodeURIComponent("Beds & Mattresses"));
-        document.getElementById("sofaChairLink").setAttribute("href", "/B/" + countryPrefix + "/furnitureCategory.html?cat=" + encodeURIComponent("Sofas & Chair"));
-        document.getElementById("cabinetStorageLink").setAttribute("href", "/B/" + countryPrefix + "/furnitureCategory.html?cat=" + encodeURIComponent("Cabinets & Storage"));
-        document.getElementById("retailProductLink").setAttribute("href", "/B/" + countryPrefix + "/retailProductsCategory.html?cat=" + encodeURIComponent("All Retail Products"));
-    }, false);
+    });
 
     function logout() {
         sessionStorage.clear();
-        window.location.href = "/B/" + countryPrefix + "/memberLogin.html?goodMsg=Logout Successfully."
+        window.location.href = "/B/${countryPrefix}/memberLogin.html?goodMsg=Logout Successfully.";
+    }
+
+    function handleFavoritesClick() {
+        if (!sessionStorage.getItem("memberEmail")) {
+            alert("Please log in to view your favorites");
+            window.location.href = "/B/${countryPrefix}/memberLogin.html";
+            return false;
+        }
+        return true;
     }
 </script>
+
 <header id="header">
     <div class="container">
         <h1 class="logo">
@@ -36,7 +54,8 @@ document.write(`
                 <img alt="Island Furniture" width="180" height="80" data-sticky-width="82" data-sticky-height="40" src="../img/logo.png">
             </a>
         </h1>
-        <!-- Non Logged In Menu-->
+
+        <!-- Non Logged In Menu -->
         <div id="menuLoggedOut" style="display: none;">
             <nav>
                 <ul class="nav nav-pills nav-top">
@@ -55,7 +74,8 @@ document.write(`
                 </button>
             </nav>
         </div>
-        <!-- Logged In Menu-->
+
+        <!-- Logged In Menu -->
         <div id="menuLoggedIn" style="display: none;">
             <nav>
                 <ul class="nav nav-pills nav-top">
@@ -82,6 +102,7 @@ document.write(`
             </nav>
         </div>
     </div>
+
     <div class="navbar-collapse nav-main-collapse collapse">
         <div class="container">
             <nav class="nav-main mega-menu">
@@ -91,7 +112,7 @@ document.write(`
                     </li>
                     <li class="dropdown">
                         <a class="dropdown-toggle" href="#">
-                            Furniture<i class="icon icon-angle-down"></i>
+                            Furniture <i class="icon icon-angle-down"></i>
                         </a>
                         <ul class="dropdown-menu">
                             <li><a id="tableDeskLink"><i class="icon icon-map-marker"></i> Tables & Desk</a></li>
@@ -105,7 +126,12 @@ document.write(`
                         </ul>
                     </li>
                     <li>
-                        <a id="retailProductLink"><i class="icon icon-coffee"></i> Retail Products</a>
+                        <a id="retailProductLink" href="/B/${countryPrefix}/retailProductsCategory.html?cat=All Retail Products"><i class="icon icon-coffee"></i> Retail Products</a>
+                    </li>
+                    <li>
+                        <a id="favouritesLink" onclick="return handleFavoritesClick()"><i class="icon icon-heart"></i> Favourites 
+                            <span id="favoritesLoginPrompt" style="display:none; font-size:12px; color:#888;">(Log in to view favorites)</span>
+                        </a>
                     </li>
                 </ul>
             </nav>
