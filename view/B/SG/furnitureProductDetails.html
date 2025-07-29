@@ -303,10 +303,13 @@
                 // Add header container to the page
                 var summaryDiv = document.querySelector('.summary.entry-summary');
                 summaryDiv.insertBefore(headerContainer, summaryDiv.firstChild);
-
-                document.getElementById("price").innerHTML = '$' + furniture.price;
+                
+                document.getElementById("price").innerHTML = '$' + Number(furniture.price).toFixed(2);
                 document.getElementById("description").innerHTML = furniture.description;
-                document.getElementById("furnitureInfo").innerHTML = furniture.info;
+                document.getElementById("furnitureInfo").innerHTML =
+                '<div><strong>Height:</strong> '  + furniture.height + '</div>' +
+                '<div><strong>Length:</strong> '  + furniture.length + '</div>' +
+                '<div><strong>Width:</strong> '   + furniture.width  + '</div>';
                 document.getElementById("categoryLink").innerHTML = furniture.category;
                 document.getElementById("categoryLink").setAttribute('href', '/B/' + countryPrefix
                     + '/furnitureCategory.html?cat=' + encodeURIComponent(furniture.category));

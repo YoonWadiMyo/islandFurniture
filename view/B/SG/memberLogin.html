@@ -8,145 +8,113 @@
             function login() {
                 var email = document.getElementById("emailLogin").value;
                 var password = document.getElementById("passwordLogin").value;
-                if(document.getElementById("loginForm").checkValidity()){
-                    var data = {
-                        email: email,
-                        password: password
-                    };
-
-                    //Check if member's email and password is valid
+                if (document.getElementById("loginForm").checkValidity()) {
                     fetch(new Request('/api/loginMember',
                     {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data)
-                    })).then(function (response) {
-                        return response.json();
-                    }).then(function (data) {
-                        //if email or password is incorrect
-                        if(!data.success) {
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, password: password })
+                    }))
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (!data.success) {
                             var url = window.location.origin + window.location.pathname;
                             window.location.href = url + '?errMsg=Login fail. Email or password is incorrect.';
+                            return;
                         }
-                        else {
-                            //Get Member Authentication State
-                            fetch(new Request('/api/memberAuthState?email=' + email,
-                            {
-                                method: 'GET',
-                                headers: {
-                                    Authorization: 'Bearer ' + data.token
-                                }
-                            })).then(function (response) {
-                                return response.json();
-                            }).then(function (member) {
-                                //if account is authenticated
-                                if (member.accountActivationStatus == 1) {
-                                    sessionStorage.setItem("token", data.token);
-                                    //Get Member
-                                    fetch(new Request('/api/getMember?email=' + email,
-                                    {
-                                        method: 'GET'
-                                    })).then(function (response) {
-                                        return response.json();
-                                    }).then(function (member) {
-                                        //store member's detail in session
-                                        sessionStorage.setItem('memberEmail', email);
-                                        sessionStorage.setItem('memberName', member.name);
-                                        sessionStorage.setItem('member', JSON.stringify(member));
-
-                                        //redirect to memberProfile.html
-                                        window.location.href = "/B/" + countryPrefix + "/memberProfile.html";
-                                    }).catch(function(error) {
-                                        console.log(error);
-                                    });
-                                }
-                                //if account is not authenticated
-                                else {
-                                    var url = window.location.origin + window.location.pathname;
-                                    window.location.href = url + '?errMsg=Email ' + email + ' has not been verified. Please go to your email to activate your account before logging in.';
-                                }
-                            }).catch(function(error) {
-                                console.log(error);
-                            });
-                        }
-                    }).catch(function(error) {
-                        console.log(error);
-                    });
+                        // skip activation check; go straight to fetching member and redirect
+                        sessionStorage.setItem("token", data.token);
+                        fetch(new Request('/api/getMember?email=' + encodeURIComponent(email),
+                        { method: 'GET' }))
+                        .then(function (response) { return response.json(); })
+                        .then(function (member) {
+                            sessionStorage.setItem('memberEmail', email);
+                            sessionStorage.setItem('memberName', member.name);
+                            sessionStorage.setItem('member', JSON.stringify(member));
+                            window.location.href = "/B/" + countryPrefix + "/memberProfile.html";
+                        })
+                        .catch(function (error) { console.log(error); });
+                    })
+                    .catch(function (error) { console.log(error); });
                 }
             }
             
             function register() {
-                var email = document.getElementById("emailReg").value;
-                var password = document.getElementById("passwordReg").value;
-                var repassword = document.getElementById("repasswordReg").value;
-
-                var ok = true;
+                var email     = document.getElementById("emailReg").value;
+                var password  = document.getElementById("passwordReg").value;
+                var repassword= document.getElementById("repasswordReg").value;
                 if (document.getElementById("registerForm").checkValidity()) {
-                    //Check if password and repassword is the same
                     if (password != repassword) {
                         document.getElementById("passwordReg").style.borderColor = "#E34234";
                         document.getElementById("repasswordReg").style.borderColor = "#E34234";
                         alert("Passwords do not match. Please key again.");
-                        ok = false;
+                        return;
                     }
-                    //Check if password length is at least 8
-                    else if (password == repassword) {
-                        if (password.length < 8) {
-                            alert("Passwords too short. At least 8 characters.");
-                            ok = false;
+                    if (password.length < 8) {
+                        alert("Passwords too short. At least 8 characters.");
+                        return;
+                    }
+                    var regData = {
+                        email: email,
+                        password: password,
+                        recaptcha: grecaptcha.getResponse(),
+                        hostName: window.location.host + '/B/' + countryPrefix
+                    };
+                    // check existing email
+                    fetch(new Request('/api/checkMemberEmailExists?email=' + encodeURIComponent(email),
+                    { method: 'GET' }))
+                    .then(function (response) { return response.json(); })
+                    .then(function (exist) {
+                        if (exist) {
+                            var url = window.location.origin + window.location.pathname;
+                            window.location.href = url + '?errMsg=Email already exist. Please try again.';
+                            return;
                         }
-                    }
-
-                    if(ok) {
-                        var regData = {
-                            email: email,
-                            password: password,
-                            recaptcha: grecaptcha.getResponse(),
-                            hostName: window.location.host + '/B/' + countryPrefix
-                        };
-
-                        //check if member's email already exists
-                        fetch(new Request('/api/checkMemberEmailExists?email=' + email,
+                        // register new account
+                        fetch(new Request('/api/registerMember',
                         {
-                            method: 'GET'
-                        })).then(function (response) {
-                            return response.json();
-                        }).then(function (exist) {
-                            //if email already exists
-                            if(exist) {
-                                var url = window.location.origin + window.location.pathname;
-                                window.location.href = url + '?errMsg=Email already exist. Please try again.';
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(regData)
+                        }))
+                        .then(function (response) { return response.json(); })
+                        .then(function (data) {
+                            if (!data.success) {
+                                alert(data.errorMsg);
+                                return;
                             }
-                            else {
-                                //Create account
-                                fetch(new Request('/api/registerMember',
-                                {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify(regData)
-                                })).then(function (response) {
-                                    return response.json();
-                                }).then(function (data) {
-                                    //if there is errors with captcha
-                                    if(!data.success) {
-                                        alert(data.errorMsg);
-                                    }
-                                    else {
-                                        var url = window.location.origin + window.location.pathname;
-                                        window.location.href = url + '?goodMsg=You have registered successfully. A link will be sent to your email for you to activate your account.';
-                                    }
-                                }).catch(function(error) {
-                                    console.log(error);
-                                });
-                            }
-                        }).catch(function(error) {
-                            console.log(error);
-                        });
-                    }
+                            // auto-login newly registered user
+                            fetch(new Request('/api/loginMember',
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: email, password: password })
+                            }))
+                            .then(function (response) { return response.json(); })
+                            .then(function (loginData) {
+                                if (!loginData.success) {
+                                    var url = window.location.origin + window.location.pathname;
+                                    window.location.href = url + '?errMsg=Auto‑login failed. Please login manually.';
+                                    return;
+                                }
+                                sessionStorage.setItem("token", loginData.token);
+                                // fetch member details
+                                fetch(new Request('/api/getMember?email=' + encodeURIComponent(email),
+                                { method: 'GET' }))
+                                .then(function (response) { return response.json(); })
+                                .then(function (member) {
+                                    sessionStorage.setItem('memberEmail', email);
+                                    sessionStorage.setItem('memberName', member.name);
+                                    sessionStorage.setItem('member', JSON.stringify(member));
+                                    window.location.href = "/B/" + countryPrefix + "/memberProfile.html";
+                                })
+                                .catch(function (error) { console.log(error); });
+                            })
+                            .catch(function (error) { console.log(error); });
+                        })
+                        .catch(function (error) { console.log(error); });
+                    })
+                    .catch(function (error) { console.log(error); });
                 }
             }
         </script>
@@ -163,79 +131,74 @@
             </section>
             <div class="container">
                 <script src="/displayMessageLong.js"></script>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="row featured-boxes login">
-                            <div class="col-md-6">
-                                <div class="featured-box featured-box-secundary default info-content">
-                                    <div class="box-content">
-                                        <h4>I'm a Returning Customer</h4>
-
-                                        <form onsubmit="return false;" id="loginForm">
-                                            <div class="row">
-                                                <div class="form-group">
-                                                    <div class="col-md-12">
-                                                        <label>E-mail Address</label>
-                                                        <input type="email" id="emailLogin" class="form-control input-lg" required>
-                                                    </div>
-                                                </div>
+                <div class="row featured-boxes login">
+                    <div class="col-md-6">
+                        <div class="featured-box featured-box-secundary default info-content">
+                            <div class="box-content">
+                                <h4>I'm a Returning Customer</h4>
+                                <form onsubmit="return false;" id="loginForm">
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <div class="col-md-12">
+                                                <label>E-mail Address</label>
+                                                <input type="email" id="emailLogin" class="form-control input-lg" required>
                                             </div>
-                                            <div class="row">
-                                                <div class="form-group">
-                                                    <div class="col-md-12">
-                                                        <a class="pull-right" href="forgotPassword.html" tabindex="-1">(Lost Password?)</a>
-                                                        <label>Password</label>
-                                                        <input type="password" id="passwordLogin" class="form-control input-lg" required>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-12">
-                                                    <input type="submit" onclick="login()" value="Login" class="btn btn-primary pull-right push-bottom">
-                                                </div>
-                                            </div>
-                                        </form>
+                                        </div>
                                     </div>
-                                </div>
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <div class="col-md-12">
+                                                <label>Password</label>
+                                                <input type="password" id="passwordLogin" class="form-control input-lg" required>
+                                                <a class="pull-right" href="forgotPassword.html" tabindex="-1">(Lost Password?)</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <input type="submit" onclick="login()" value="Login" class="btn btn-primary pull-right push-bottom">
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
-                            <div class="col-md-6">
-                                <div class="featured-box featured-box-secundary default info-content">
-                                    <div class="box-content">
-                                        <h4>Register An Account</h4>
-                                        <form onsubmit="return false;" id="registerForm">
-                                            <div class="row">
-                                                <div class="form-group">
-                                                    <div class="col-md-12">
-                                                        <label>E-mail Address</label>
-                                                        <input type="email" id="emailReg" class="form-control input-lg" required>
-                                                    </div>
-                                                </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="featured-box featured-box-secundary default info-content">
+                            <div class="box-content">
+                                <h4>Register An Account</h4>
+                                <form onsubmit="return false;" id="registerForm">
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <div class="col-md-12">
+                                                <label>E-mail Address</label>
+                                                <input type="email" id="emailReg" class="form-control input-lg" required>
                                             </div>
-                                            <div class="row">
-                                                <div class="form-group">
-                                                    <div class="col-md-6">
-                                                        <label>Password</label>
-                                                        <input id="passwordReg" type="password" value="" class="form-control input-lg" required>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label>Re-enter Password</label>
-                                                        <input id="repasswordReg" type="password" value="" class="form-control input-lg" required>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="form-group">
-                                                    <div class="col-md-3">
-                                                        <div class="g-recaptcha" data-sitekey="6LcLaXYUAAAAAOYUvT0g3IpuM2HLnmg47B_3Wugd"></div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <input type="submit" onclick="register()" value="Register" class="btn btn-primary">
-                                                </div>
-                                            </div>
-                                        </form>
+                                        </div>
                                     </div>
-                                </div>
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <div class="col-md-6">
+                                                <label>Password</label>
+                                                <input id="passwordReg" type="password" class="form-control input-lg" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label>Re-enter Password</label>
+                                                <input id="repasswordReg" type="password" class="form-control input-lg" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <div class="col-md-3">
+                                                <div class="g-recaptcha" data-sitekey="6LcLaXYUAAAAAOYUvT0g3IpuM2HLnmg47B_3Wugd"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="submit" onclick="register()" value="Register" class="btn btn-primary">
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -243,6 +206,5 @@
             </div>
         </div>
         <script src="../footer.js"></script>
-
     </body>
 </html>
