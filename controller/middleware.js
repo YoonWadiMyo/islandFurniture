@@ -12,16 +12,18 @@ let checkToken = (req, res, next) => {
       if (err) {
         res.status(500).send("Token is not valid");
       } else {
+        // Store the decoded payload
         req.decoded = decoded;
+        // Also assign email for convenience
+        req.user = { email: decoded.email };
         next();
       }
     });
-  } 
-  else {
+  } else {
     res.status(500).send("Auth token is not supplied");
   }
 };
 
 module.exports = {
   checkToken: checkToken
-}
+};

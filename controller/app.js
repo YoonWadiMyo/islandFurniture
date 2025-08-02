@@ -16,10 +16,11 @@ app.use(require('./supplierentityDB.js'));
 app.use(require('./warehouseentityDB.js'));
 app.use(require('./lineitementityDB.js'));
 app.use(require('./storagebinentityDB.js'));
+app.use(require('./reviewentityDB.js'));
 
 let middleware = require('./middleware');
 app.get('/api/checkToken', middleware.checkToken, function (req, res) {
     res.send({success: true});
 });
 
-module.exports = app
+module.exports = app;
