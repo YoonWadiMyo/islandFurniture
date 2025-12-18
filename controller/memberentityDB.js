@@ -163,32 +163,32 @@ app.post('/api/verifyPassword', jsonParser, function (req, res) {
         });
 });
 
-app.put('/api/activateMemberAccount', jsonParser, function (req, res) {
-    var email = req.body.email;
-    var activationCode = req.body.activateCode;
-    if(email != null && email != '' && activationCode != null && activationCode != '') {
-        member.getMemberActivateCode(email)
-        .then((result) => {
-            if(result.activationCode == activationCode) {
-                member.memberActivateAccount(email)
-                .then((result) => {
-                    res.send(result);
-                })
-                .catch((err) => {
-                    console.log(err);
-                    res.status(500).send("Failed to activate member account");
-                });
-            }
-            else {
-                res.status(500).send("Failed to activate member account");
-            }
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).send("Failed to activate member account");
-        });
-    }
-});
+// app.put('/api/activateMemberAccount', jsonParser, function (req, res) {
+//     var email = req.body.email;
+//     var activationCode = req.body.activateCode;
+//     if(email != null && email != '' && activationCode != null && activationCode != '') {
+//         member.getMemberActivateCode(email)
+//         .then((result) => {
+//             if(result.activationCode == activationCode) {
+//                 member.memberActivateAccount(email)
+//                 .then((result) => {
+//                     res.send(result);
+//                 })
+//                 .catch((err) => {
+//                     console.log(err);
+//                     res.status(500).send("Failed to activate member account");
+//                 });
+//             }
+//             else {
+//                 res.status(500).send("Failed to activate member account");
+//             }
+//         })
+//         .catch((err) => {
+//             console.log(err);
+//             res.status(500).send("Failed to activate member account");
+//         });
+//     }
+// });
 
 app.put('/api/updateMember', [middleware.checkToken, jsonParser], function (req, res) {
     member.updateMember(req.body)

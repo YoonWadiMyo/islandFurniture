@@ -1,10 +1,10 @@
-var mysql = require('mysql');
+var mysql = require('mysql2');
 var dbconnect = {
     getConnection: function () {
         var conn = mysql.createConnection({
             host: "localhost",
             user: "root",
-            password: "Chloelim07",
+            password: "Password123",
             database: "islandfurniture-it07"
         });
         return conn;
